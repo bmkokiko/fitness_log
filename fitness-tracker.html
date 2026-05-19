@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitLog — Daily Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #f4f1ea;
+  --bg2: #ede9df;
+  --bg3: #fff;
+  --card: #ffffff;
+  --border: rgba(60,50,30,0.12);
+  --border2: rgba(60,50,30,0.22);
+  --text: #1c1a14;
+  --text2: #5a5448;
+  --text3: #9a9080;
+  --accent: #2d6a4f;
+  --accent2: #52b788;
+  --accent-bg: #d8f3dc;
+  --warn: #c77a20;
+  --warn-bg: #fef3e2;
+  --danger: #b5372a;
+  --danger-bg: #fdecea;
+  --blue: #1d5fa6;
+  --blue-bg: #e8f1fb;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+}
+[data-theme="dark"] {
+  --bg: #141210;
+  --bg2: #1c1a16;
+  --bg3: #252220;
+  --card: #1e1c18;
+  --border: rgba(255,240,210,0.10);
+  --border2: rgba(255,240,210,0.18);
+  --text: #f0ebe0;
+  --text2: #b8b0a0;
+  --text3: #706a5e;
+  --accent: #52b788;
+  --accent2: #74c69d;
+  --accent-bg: rgba(82,183,136,0.15);
+  --warn: #e8a44a;
+  --warn-bg: rgba(232,164,74,0.12);
+  --danger: #e06c5e;
+  --danger-bg: rgba(224,108,94,0.12);
+  --blue: #6aaeee;
+  --blue-bg: rgba(106,174,238,0.12);
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+  transition: background 0.3s, color 0.3s;
+}
+/* ---- Layout ---- */
+.app { max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
+@media(min-width: 900px) {
+  .app { max-width: 900px; }
+}
+/* ---- Header ---- */
+header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+.logo {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+.logo span { color: var(--text3); font-weight: 300; font-style: italic; font-size: 14px; margin-left: 4px; }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+.icon-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: all 0.15s;
+}
+.icon-btn:hover { background: var(--bg2); color: var(--text); }
+/* ---- Nav ---- */
+nav {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+nav::-webkit-scrollbar { display: none; }
+.nav-btn {
+  flex: 1;
+  min-width: 70px;
+  padding: 10px 8px;
+  background: none;
+  border: none;
+  color: var(--text3);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.nav-btn .nav-icon { font-size: 18px; }
+.nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.nav-btn:hover:not(.active) { color: var(--text2); background: var(--bg2); }
+/* ---- Pages ---- */
+.page { display: none; padding: 20px; }
+.page.active { display: block; }
+@media(min-width: 900px) {
+  .page { padding: 28px; }
+}
+/* ---- Calendar ---- */
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.cal-month {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+}
+.cal-nav-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.cal-nav-btn:hover { background: var(--bg2); color: var(--text); }
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: 20px;
+}
+.cal-day-header {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 4px 0 8px;
+}
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text2);
+  position: relative;
+  transition: all 0.12s;
+  gap: 2px;
+}
+.cal-day:hover { background: var(--bg2); color: var(--text); }
+.cal-day.today {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 500;
+}
+.cal-day.selected {
+  background: var(--accent);
+  color: #fff;
+}
+.cal-day.empty { cursor: default; }
+.cal-day.empty:hover { background: none; }
+.cal-day.other-month { color: var(--text3); opacity: 0.5; }
+.cal-dots {
+  display: flex; gap: 2px; justify-content: center;
+}
+.cal-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+}
+.dot-workout { background: var(--accent); }
+.dot-steps { background: var(--blue); }
+.dot-miss { background: var(--danger); }
+.selected .dot-workout, .selected .dot-steps, .selected .dot-miss { background: rgba(255,255,255,0.8); }
+/* ---- Day Log ---- */
+.day-header {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.day-date {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.day-status { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.badge-green { background: var(--accent-bg); color: var(--accent); }
+.badge-blue { background: var(--blue-bg); color: var(--blue); }
+.badge-warn { background: var(--warn-bg); color: var(--warn); }
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+.badge-gray { background: var(--bg2); color: var(--text3); }
+/* ---- Question Cards ---- */
+.q-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+}
+.q-title {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 14px;
+  color: var(--text);
+}
+.q-title .q-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text3);
+  display: block;
+  margin-bottom: 4px;
+}
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn {
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border2);
+  background: var(--bg);
+  color: var(--text2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn:hover { background: var(--bg2); color: var(--text); }
+.btn.selected-yes {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.btn.selected-no {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.btn-sm {
+  padding: 7px 14px;
+  font-size: 13px;
+}
+.workout-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--bg);
+  color: var(--text2);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.chip:hover { background: var(--bg2); }
+.chip.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  padding: 10px 14px;
+  resize: vertical;
+  min-height: 80px;
+  margin-top: 12px;
+}
+textarea:focus { outline: none; border-color: var(--accent); }
+.save-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 14px;
+  transition: all 0.15s;
+}
+.save-btn:hover { background: var(--accent2); }
+.save-btn:active { transform: scale(0.99); }
+/* ---- Dashboard / Trending ---- */
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media(min-width: 500px) {
+  .stat-grid { grid-template-columns: repeat(4, 1fr); }
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+}
+.stat-num {
+  font-family: 'Fraunces', serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.chart-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+}
+/* ---- Export ---- */
+.export-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+}
+.export-title {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.export-desc {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 14px;
+}
+.export-btn {
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+.export-btn:hover { background: var(--accent); color: #fff; }
+/* ---- Toast ---- */
+.toast {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s;
+  z-index: 999;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* ---- Streak ---- */
+.streak-bar {
+  display: flex;
+  gap: 3px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.streak-cell {
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  background: var(--bg2);
+}
+.streak-cell.w { background: var(--accent); }
+.streak-cell.s { background: var(--blue); }
+.streak-cell.b { background: #7c6fa0; }
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+}
+.empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+.workout-type-input {
+  margin-top: 12px;
+}
+.steps-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+.steps-row input[type="number"] {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  padding: 9px 14px;
+}
+.steps-row input:focus { outline: none; border-color: var(--accent); }
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.tab:hover:not(.active) { background: var(--bg2); }
+.log-list { display: flex; flex-direction: column; gap: 10px; }
+.log-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.log-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.log-icon.workout { background: var(--accent-bg); color: var(--accent); }
+.log-icon.steps { background: var(--blue-bg); color: var(--blue); }
+.log-icon.miss { background: var(--danger-bg); color: var(--danger); }
+.log-content { flex: 1; }
+.log-date { font-size: 12px; color: var(--text3); margin-bottom: 2px; font-family: 'DM Mono', monospace; }
+.log-text { font-size: 14px; color: var(--text); }
+.log-note { font-size: 13px; color: var(--text2); margin-top: 2px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">FitLog <span>daily tracker</span></div>
+  <div class="header-actions">
+    <button class="icon-btn" id="themeBtn" title="Toggle dark/light mode" aria-label="Toggle theme">☀️</button>
+  </div>
+</header>
+
+<nav>
+  <button class="nav-btn active" data-page="calendar" onclick="showPage('calendar')">
+    <span class="nav-icon">📅</span>Calendar
+  </button>
+  <button class="nav-btn" data-page="log" onclick="showPage('log')">
+    <span class="nav-icon">✏️</span>Log Day
+  </button>
+  <button class="nav-btn" data-page="dashboard" onclick="showPage('dashboard')">
+    <span class="nav-icon">📊</span>Dashboard
+  </button>
+  <button class="nav-btn" data-page="trends" onclick="showPage('trends')">
+    <span class="nav-icon">📈</span>Trends
+  </button>
+  <button class="nav-btn" data-page="export" onclick="showPage('export')">
+    <span class="nav-icon">💾</span>Export
+  </button>
+</nav>
+
+<div class="app">
+
+<!-- CALENDAR PAGE -->
+<div class="page active" id="page-calendar">
+  <div class="cal-header">
+    <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+    <div class="cal-month" id="calMonthLabel"></div>
+    <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+  <div id="calDayDetail"></div>
+</div>
+
+<!-- LOG DAY PAGE -->
+<div class="page" id="page-log">
+  <div class="day-header">
+    <div class="day-date" id="logDateLabel"></div>
+    <div class="day-status" id="logBadges"></div>
+  </div>
+
+  <!-- Workout Question -->
+  <div class="q-card" id="workoutCard">
+    <div class="q-title">
+      <span class="q-label">Activity</span>
+      Did you work out today?
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="workoutYes" onclick="setWorkout(true)">💪 Yes!</button>
+      <button class="btn" id="workoutNo" onclick="setWorkout(false)">✗ No</button>
+    </div>
+    <div id="workoutDetails" style="display:none;">
+      <div class="workout-chips" id="workoutChips">
+        <div class="chip" onclick="toggleWorkoutType(this,'Strength')">🏋️ Strength</div>
+        <div class="chip" onclick="toggleWorkoutType(this,'Cardio')">🏃 Cardio</div>
+        <div class="chip" onclick="toggleWorkoutType(this,'HIIT')">⚡ HIIT</div>
+        <div class="chip" onclick="toggleWorkoutType(this,'Yoga')">🧘 Yoga</div>
+        <div class="chip" onclick="toggleWorkoutType(this,'Cycling')">🚴 Cycling</div>
+        <div class="chip" onclick="toggleWorkoutType(this,'Swimming')">🏊 Swimming</div>
+        <div class="chip" onclick="toggleWorkoutType(this,'Running')">🏅 Running</div>
+        <div class="chip" onclick="toggleWorkoutType(this,'Sports')">⚽ Sports</div>
+        <div class="chip" onclick="toggleWorkoutType(this,'Stretching')">🤸 Stretching</div>
+        <div class="chip" onclick="toggleWorkoutType(this,'Other')">➕ Other</div>
+      </div>
+      <textarea id="workoutNotes" placeholder="Any notes about your workout? (optional)"></textarea>
+    </div>
+    <div id="workoutMissDetails" style="display:none;">
+      <textarea id="workoutMissReason" placeholder="What held you back today? (optional — be honest with yourself)"></textarea>
+    </div>
+  </div>
+
+  <!-- Steps Question -->
+  <div class="q-card" id="stepsCard">
+    <div class="q-title">
+      <span class="q-label">Steps</span>
+      Did you hit 10,000 steps today?
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="stepsYes" onclick="setSteps(true)">👟 Yes!</button>
+      <button class="btn" id="stepsNo" onclick="setSteps(false)">✗ No</button>
+    </div>
+    <div id="stepsDetails" style="display:none;">
+      <div class="steps-row">
+        <input type="number" id="stepCount" placeholder="Actual step count (optional)" min="0" max="99999">
+      </div>
+    </div>
+    <div id="stepsMissDetails" style="display:none;">
+      <div class="steps-row">
+        <input type="number" id="stepCountMiss" placeholder="How many steps? (optional)" min="0" max="9999">
+      </div>
+      <textarea id="stepsMissReason" placeholder="Why did you miss 10k steps? (optional)"></textarea>
+    </div>
+  </div>
+
+  <button class="save-btn" onclick="saveDay()">💾 Save Today's Log</button>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div class="page" id="page-dashboard">
+  <div class="section-title">Dashboard</div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchDashTab(this,'all')">All Time</button>
+    <button class="tab" onclick="switchDashTab(this,'month')">This Month</button>
+    <button class="tab" onclick="switchDashTab(this,'week')">This Week</button>
+  </div>
+
+  <div class="stat-grid" id="dashStats"></div>
+
+  <div class="chart-card">
+    <div class="chart-title">Workout &amp; Steps — 30 days</div>
+    <div style="position:relative;height:200px;">
+      <canvas id="dashChart" role="img" aria-label="Combined workout and steps chart for last 30 days"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Workout types breakdown</div>
+    <div style="position:relative;height:220px;">
+      <canvas id="typeChart" role="img" aria-label="Workout type breakdown pie chart"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Monthly overview — this year</div>
+    <div style="position:relative;height:200px;">
+      <canvas id="monthChart" role="img" aria-label="Monthly workout and steps goal hit chart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- TRENDS PAGE -->
+<div class="page" id="page-trends">
+  <div class="section-title">Trends &amp; Streaks</div>
+  <div id="trendsContent"></div>
+</div>
+
+<!-- EXPORT PAGE -->
+<div class="page" id="page-export">
+  <div class="section-title">Export Summary</div>
+
+  <div class="export-card">
+    <div class="export-title">📅 Weekly Summary</div>
+    <div class="export-desc">Last 7 days of activity — workout sessions, step goals, and notes.</div>
+    <button class="export-btn" onclick="exportData('week','csv')">CSV</button>
+    <button class="export-btn" onclick="exportData('week','txt')">Text</button>
+  </div>
+
+  <div class="export-card">
+    <div class="export-title">🗓️ Monthly Summary</div>
+    <div class="export-desc">Current month complete log with daily entries and trends.</div>
+    <button class="export-btn" onclick="exportData('month','csv')">CSV</button>
+    <button class="export-btn" onclick="exportData('month','txt')">Text</button>
+  </div>
+
+  <div class="export-card">
+    <div class="export-title">📆 Yearly Summary</div>
+    <div class="export-desc">Full year data with monthly aggregates, top workout types, and progress metrics.</div>
+    <button class="export-btn" onclick="exportData('year','csv')">CSV</button>
+    <button class="export-btn" onclick="exportData('year','txt')">Text</button>
+  </div>
+
+  <div class="export-card">
+    <div class="export-title">💾 Full Data Backup</div>
+    <div class="export-desc">Export all logged data as JSON. Use this to back up or migrate your data.</div>
+    <button class="export-btn" onclick="exportData('all','json')">Download JSON</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  DATA LAYER
+// ============================================================
+const STORAGE_KEY = 'fitlog_data_v1';
+let data = {};
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    data = raw ? JSON.parse(raw) : {};
+  } catch(e) { data = {}; }
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function getEntry(dateStr) {
+  return data[dateStr] || null;
+}
+
+function setEntry(dateStr, entry) {
+  data[dateStr] = entry;
+  saveData();
+}
+
+// ============================================================
+//  THEME
+// ============================================================
+let darkMode = false;
+function initTheme() {
+  const saved = localStorage.getItem('fitlog_theme');
+  if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    darkMode = true;
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('themeBtn').textContent = '🌙';
+  }
+}
+document.getElementById('themeBtn').onclick = () => {
+  darkMode = !darkMode;
+  document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : '');
+  document.getElementById('themeBtn').textContent = darkMode ? '🌙' : '☀️';
+  localStorage.setItem('fitlog_theme', darkMode ? 'dark' : 'light');
+  if (currentPage === 'dashboard') renderDashboard();
+  if (currentPage === 'trends') renderTrends();
+};
+
+// ============================================================
+//  PAGE NAVIGATION
+// ============================================================
+let currentPage = 'calendar';
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  currentPage = page;
+  if (page === 'log') renderLogPage();
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'trends') renderTrends();
+  if (page === 'calendar') renderCalendar();
+}
+
+// ============================================================
+//  DATE UTILS
+// ============================================================
+function dateStr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+let today = new Date();
+let selectedDate = new Date();
+let calYear = today.getFullYear();
+let calMonth = today.getMonth();
+
+function formatDisplayDate(d) {
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  return days[d.getDay()] + ', ' + MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+// ============================================================
+//  CALENDAR
+// ============================================================
+function renderCalendar() {
+  const label = document.getElementById('calMonthLabel');
+  label.textContent = MONTHS[calMonth] + ' ' + calYear;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  DAYS.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-day-header';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+  // Prev month days
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const el = document.createElement('div');
+    el.className = 'cal-day other-month empty';
+    el.textContent = daysInPrev - i;
+    grid.appendChild(el);
+  }
+  // This month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dt = new Date(calYear, calMonth, d);
+    const ds = dateStr(dt);
+    const el = document.createElement('div');
+    el.className = 'cal-day';
+    const todayDs = dateStr(today);
+    if (ds === todayDs) el.classList.add('today');
+    if (ds === dateStr(selectedDate)) el.classList.add('selected');
+    el.innerHTML = '<span>' + d + '</span>';
+    const entry = getEntry(ds);
+    if (entry) {
+      const dotsEl = document.createElement('div');
+      dotsEl.className = 'cal-dots';
+      if (entry.workout === true) {
+        dotsEl.innerHTML += '<div class="cal-dot dot-workout"></div>';
+      } else if (entry.workout === false) {
+        dotsEl.innerHTML += '<div class="cal-dot dot-miss"></div>';
+      }
+      if (entry.steps === true) {
+        dotsEl.innerHTML += '<div class="cal-dot dot-steps"></div>';
+      } else if (entry.steps === false) {
+        dotsEl.innerHTML += '<div class="cal-dot dot-miss"></div>';
+      }
+      el.appendChild(dotsEl);
+    }
+    el.onclick = () => { selectDay(dt); };
+    grid.appendChild(el);
+  }
+  // Trailing days
+  const total = firstDay + daysInMonth;
+  const trailing = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let i = 1; i <= trailing; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day other-month empty';
+    el.textContent = i;
+    grid.appendChild(el);
+  }
+  renderCalDetail();
+}
+
+function selectDay(d) {
+  selectedDate = d;
+  renderCalendar();
+}
+
+function changeMonth(delta) {
+  calMonth += delta;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+function renderCalDetail() {
+  const ds = dateStr(selectedDate);
+  const entry = getEntry(ds);
+  const el = document.getElementById('calDayDetail');
+  if (!entry) {
+    el.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;color:var(--text3);font-size:14px;">No log for this day. <a href="#" onclick="event.preventDefault();selectedDate=new Date('+selectedDate.getTime()+');showPage(\'log\')" style="color:var(--accent);">Add entry →</a></div>';
+    return;
+  }
+  let html = `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+    <div style="font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin-bottom:12px;">${formatDisplayDate(selectedDate)}</div>`;
+  if (entry.workout === true) {
+    html += `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><div class="log-icon workout">💪</div><div><div style="font-size:14px;font-weight:500;">Worked out</div>${entry.workoutTypes?.length ? '<div style="font-size:13px;color:var(--text2);">'+entry.workoutTypes.join(', ')+'</div>' : ''}${entry.workoutNotes ? '<div style="font-size:13px;color:var(--text2);font-style:italic;">'+entry.workoutNotes+'</div>' : ''}</div></div>`;
+  } else if (entry.workout === false) {
+    html += `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><div class="log-icon miss">✗</div><div><div style="font-size:14px;font-weight:500;">No workout</div>${entry.workoutMissReason ? '<div style="font-size:13px;color:var(--text2);font-style:italic;">'+entry.workoutMissReason+'</div>' : ''}</div></div>`;
+  }
+  if (entry.steps === true) {
+    html += `<div style="display:flex;align-items:flex-start;gap:10px;"><div class="log-icon steps">👟</div><div><div style="font-size:14px;font-weight:500;">Hit 10k steps${entry.stepCount ? ' — '+Number(entry.stepCount).toLocaleString()+' steps' : ''}</div></div></div>`;
+  } else if (entry.steps === false) {
+    html += `<div style="display:flex;align-items:flex-start;gap:10px;"><div class="log-icon miss">✗</div><div><div style="font-size:14px;font-weight:500;">Under 10k steps${entry.stepCountMiss ? ' — '+Number(entry.stepCountMiss).toLocaleString()+' steps' : ''}</div>${entry.stepsMissReason ? '<div style="font-size:13px;color:var(--text2);font-style:italic;">'+entry.stepsMissReason+'</div>' : ''}</div></div>`;
+  }
+  html += `<div style="margin-top:14px;"><a href="#" onclick="event.preventDefault();selectedDate=new Date(${selectedDate.getTime()});showPage('log')" style="font-size:13px;color:var(--accent);">Edit entry →</a></div>`;
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ============================================================
+//  LOG PAGE STATE
+// ============================================================
+let logState = {
+  workout: null,
+  workoutTypes: [],
+  workoutNotes: '',
+  workoutMissReason: '',
+  steps: null,
+  stepCount: '',
+  stepCountMiss: '',
+  stepsMissReason: ''
+};
+
+function renderLogPage() {
+  const ds = dateStr(selectedDate);
+  const entry = getEntry(ds);
+  document.getElementById('logDateLabel').textContent = formatDisplayDate(selectedDate);
+
+  if (entry) {
+    logState = {
+      workout: entry.workout !== undefined ? entry.workout : null,
+      workoutTypes: entry.workoutTypes || [],
+      workoutNotes: entry.workoutNotes || '',
+      workoutMissReason: entry.workoutMissReason || '',
+      steps: entry.steps !== undefined ? entry.steps : null,
+      stepCount: entry.stepCount || '',
+      stepCountMiss: entry.stepCountMiss || '',
+      stepsMissReason: entry.stepsMissReason || ''
+    };
+  } else {
+    logState = { workout: null, workoutTypes: [], workoutNotes: '', workoutMissReason: '', steps: null, stepCount: '', stepCountMiss: '', stepsMissReason: '' };
+  }
+  updateLogUI();
+}
+
+function updateLogUI() {
+  // Badges
+  const badges = document.getElementById('logBadges');
+  let bHtml = '';
+  if (logState.workout === true) bHtml += '<span class="badge badge-green">💪 Worked out</span>';
+  else if (logState.workout === false) bHtml += '<span class="badge badge-danger">✗ No workout</span>';
+  else bHtml += '<span class="badge badge-gray">Workout: not set</span>';
+  if (logState.steps === true) bHtml += '<span class="badge badge-blue">👟 10k steps</span>';
+  else if (logState.steps === false) bHtml += '<span class="badge badge-warn">✗ Missed steps</span>';
+  else bHtml += '<span class="badge badge-gray">Steps: not set</span>';
+  badges.innerHTML = bHtml;
+
+  // Workout buttons
+  const wYes = document.getElementById('workoutYes');
+  const wNo = document.getElementById('workoutNo');
+  wYes.className = 'btn' + (logState.workout === true ? ' selected-yes' : '');
+  wNo.className = 'btn' + (logState.workout === false ? ' selected-no' : '');
+  document.getElementById('workoutDetails').style.display = logState.workout === true ? 'block' : 'none';
+  document.getElementById('workoutMissDetails').style.display = logState.workout === false ? 'block' : 'none';
+
+  if (logState.workout === true) {
+    document.querySelectorAll('.workout-chips .chip').forEach(c => {
+      c.classList.toggle('selected', logState.workoutTypes.includes(c.textContent.trim().replace(/^.\s/,'')));
+    });
+    document.getElementById('workoutNotes').value = logState.workoutNotes;
+  }
+  if (logState.workout === false) {
+    document.getElementById('workoutMissReason').value = logState.workoutMissReason;
+  }
+
+  // Steps buttons
+  const sYes = document.getElementById('stepsYes');
+  const sNo = document.getElementById('stepsNo');
+  sYes.className = 'btn' + (logState.steps === true ? ' selected-yes' : '');
+  sNo.className = 'btn' + (logState.steps === false ? ' selected-no' : '');
+  document.getElementById('stepsDetails').style.display = logState.steps === true ? 'block' : 'none';
+  document.getElementById('stepsMissDetails').style.display = logState.steps === false ? 'block' : 'none';
+  if (logState.steps === true) document.getElementById('stepCount').value = logState.stepCount;
+  if (logState.steps === false) {
+    document.getElementById('stepCountMiss').value = logState.stepCountMiss;
+    document.getElementById('stepsMissReason').value = logState.stepsMissReason;
+  }
+}
+
+function setWorkout(val) {
+  logState.workout = val;
+  updateLogUI();
+}
+
+function toggleWorkoutType(el, type) {
+  const idx = logState.workoutTypes.indexOf(type);
+  if (idx === -1) logState.workoutTypes.push(type);
+  else logState.workoutTypes.splice(idx, 1);
+  el.classList.toggle('selected', logState.workoutTypes.includes(type));
+}
+
+function setSteps(val) {
+  logState.steps = val;
+  updateLogUI();
+}
+
+function saveDay() {
+  const ds = dateStr(selectedDate);
+  const entry = {
+    workout: logState.workout,
+    workoutTypes: logState.workout === true ? logState.workoutTypes : [],
+    workoutNotes: logState.workout === true ? document.getElementById('workoutNotes').value : '',
+    workoutMissReason: logState.workout === false ? document.getElementById('workoutMissReason').value : '',
+    steps: logState.steps,
+    stepCount: logState.steps === true ? document.getElementById('stepCount').value : '',
+    stepCountMiss: logState.steps === false ? document.getElementById('stepCountMiss').value : '',
+    stepsMissReason: logState.steps === false ? document.getElementById('stepsMissReason').value : '',
+    savedAt: new Date().toISOString()
+  };
+  setEntry(ds, entry);
+  showToast('✓ Day logged!');
+  renderLogPage();
+  renderCalendar();
+}
+
+// ============================================================
+//  DASHBOARD
+// ============================================================
+let dashChart = null, typeChart = null, monthChart = null;
+let dashTabMode = 'all';
+
+function switchDashTab(btn, mode) {
+  document.querySelectorAll('#page-dashboard .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  dashTabMode = mode;
+  renderDashboard();
+}
+
+function getFilteredEntries(mode) {
+  const now = new Date();
+  const entries = Object.entries(data).map(([k,v]) => ({ date: new Date(k), dateStr: k, ...v }))
+    .sort((a,b) => a.date - b.date);
+  if (mode === 'week') {
+    const cutoff = new Date(now); cutoff.setDate(now.getDate() - 6);
+    return entries.filter(e => e.date >= cutoff);
+  }
+  if (mode === 'month') {
+    return entries.filter(e => e.date.getFullYear() === now.getFullYear() && e.date.getMonth() === now.getMonth());
+  }
+  return entries;
+}
+
+function renderDashboard() {
+  const entries = getFilteredEntries(dashTabMode);
+  const total = entries.length;
+  const workouts = entries.filter(e => e.workout === true).length;
+  const stepsHit = entries.filter(e => e.steps === true).length;
+  const both = entries.filter(e => e.workout === true && e.steps === true).length;
+
+  // Streak
+  let streak = 0;
+  const now = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(now); d.setDate(now.getDate() - i);
+    const e = getEntry(dateStr(d));
+    if (e && (e.workout === true || e.steps === true)) streak++;
+    else if (i > 0) break;
+  }
+
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${workouts}</div><div class="stat-label">Workouts</div></div>
+    <div class="stat-card"><div class="stat-num">${stepsHit}</div><div class="stat-label">10k days</div></div>
+    <div class="stat-card"><div class="stat-num">${total > 0 ? Math.round(workouts/total*100) : 0}%</div><div class="stat-label">Workout rate</div></div>
+    <div class="stat-card"><div class="stat-num">${streak}</div><div class="stat-label">Active streak</div></div>
+  `;
+
+  if (total < 2) {
+    document.querySelector('#page-dashboard .chart-card:nth-child(3)').innerHTML = '<div class="chart-title">Workout &amp; Steps — 30 days</div><div class="empty-state"><div class="empty-icon">📊</div><p>Log at least 2 days to see charts</p></div>';
+    document.querySelector('#page-dashboard .chart-card:nth-child(4)').innerHTML = '<div class="chart-title">Workout types breakdown</div><div class="empty-state"><div class="empty-icon">🏋️</div><p>Add some workouts first</p></div>';
+    document.querySelector('#page-dashboard .chart-card:nth-child(5)').innerHTML = '<div class="chart-title">Monthly overview</div><div class="empty-state"><div class="empty-icon">📆</div><p>Log more days to see monthly trends</p></div>';
+    return;
+  }
+
+  // Restore chart canvases if wiped
+  const cards = document.querySelectorAll('#page-dashboard .chart-card');
+  if (!document.getElementById('dashChart')) {
+    cards[0].innerHTML = '<div class="chart-title">Workout &amp; Steps — 30 days</div><div style="position:relative;height:200px;"><canvas id="dashChart" role="img" aria-label="Workout and steps chart"></canvas></div>';
+  }
+  if (!document.getElementById('typeChart')) {
+    cards[1].innerHTML = '<div class="chart-title">Workout types breakdown</div><div style="position:relative;height:220px;"><canvas id="typeChart" role="img" aria-label="Workout types pie chart"></canvas></div>';
+  }
+  if (!document.getElementById('monthChart')) {
+    cards[2].innerHTML = '<div class="chart-title">Monthly overview — this year</div><div style="position:relative;height:200px;"><canvas id="monthChart" role="img" aria-label="Monthly overview bar chart"></canvas></div>';
+  }
+
+  const isDark = darkMode;
+  const textColor = isDark ? '#b8b0a0' : '#5a5448';
+  const gridColor = isDark ? 'rgba(255,240,210,0.08)' : 'rgba(60,50,30,0.07)';
+
+  // Last 30 days chart
+  const last30 = [];
+  const last30Labels = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds2 = dateStr(d);
+    const e = getEntry(ds2);
+    last30.push({ w: e ? (e.workout === true ? 1 : 0) : null, s: e ? (e.steps === true ? 1 : 0) : null });
+    last30Labels.push(d.getMonth()+1 + '/' + d.getDate());
+  }
+  if (dashChart) dashChart.destroy();
+  dashChart = new Chart(document.getElementById('dashChart'), {
+    type: 'bar',
+    data: {
+      labels: last30Labels,
+      datasets: [
+        { label: 'Workout', data: last30.map(x => x.w), backgroundColor: '#2d6a4f', stack: 'a', borderRadius: 2 },
+        { label: '10k Steps', data: last30.map(x => x.s), backgroundColor: '#1d5fa6', stack: 'b', borderRadius: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { color: textColor, font: { size: 11 }, boxWidth: 10, padding: 12 } } },
+      scales: {
+        x: { ticks: { color: textColor, font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }, grid: { display: false } },
+        y: { ticks: { color: textColor, font: { size: 10 }, stepSize: 1 }, grid: { color: gridColor }, min: 0, max: 1 }
+      }
+    }
+  });
+
+  // Workout types pie
+  const typeCounts = {};
+  Object.values(data).forEach(e => {
+    if (e.workoutTypes) e.workoutTypes.forEach(t => { typeCounts[t] = (typeCounts[t]||0)+1; });
+  });
+  const typeKeys = Object.keys(typeCounts);
+  if (typeChart) typeChart.destroy();
+  if (typeKeys.length === 0) {
+    document.getElementById('typeChart').parentElement.parentElement.innerHTML = '<div class="chart-title">Workout types breakdown</div><div class="empty-state"><div class="empty-icon">🏋️</div><p>No workout types logged yet</p></div>';
+  } else {
+    const colors = ['#2d6a4f','#1d5fa6','#7c3aed','#c77a20','#b5372a','#0e7490','#065f46','#92400e','#7e22ce','#be185d'];
+    typeChart = new Chart(document.getElementById('typeChart'), {
+      type: 'doughnut',
+      data: {
+        labels: typeKeys,
+        datasets: [{ data: typeKeys.map(k => typeCounts[k]), backgroundColor: colors.slice(0, typeKeys.length), borderWidth: 1, borderColor: isDark ? '#1e1c18' : '#fff' }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { color: textColor, font: { size: 11 }, boxWidth: 10, padding: 10 } } }
+      }
+    });
+  }
+
+  // Monthly overview
+  const nowYear = new Date().getFullYear();
+  const monthLabels = MONTHS.map(m => m.substring(0,3));
+  const monthWorkouts = Array(12).fill(0);
+  const monthSteps = Array(12).fill(0);
+  Object.entries(data).forEach(([k,v]) => {
+    const d = new Date(k);
+    if (d.getFullYear() === nowYear) {
+      if (v.workout === true) monthWorkouts[d.getMonth()]++;
+      if (v.steps === true) monthSteps[d.getMonth()]++;
+    }
+  });
+  if (monthChart) monthChart.destroy();
+  monthChart = new Chart(document.getElementById('monthChart'), {
+    type: 'bar',
+    data: {
+      labels: monthLabels,
+      datasets: [
+        { label: 'Workouts', data: monthWorkouts, backgroundColor: '#2d6a4f', borderRadius: 3 },
+        { label: '10k Days', data: monthSteps, backgroundColor: '#1d5fa6', borderRadius: 3 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { color: textColor, font: { size: 11 }, boxWidth: 10 } } },
+      scales: {
+        x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: textColor, font: { size: 10 }, stepSize: 1 }, grid: { color: gridColor } }
+      }
+    }
+  });
+}
+
+// ============================================================
+//  TRENDS
+// ============================================================
+function renderTrends() {
+  const el = document.getElementById('trendsContent');
+  const allEntries = Object.entries(data).map(([k,v]) => ({ dateStr: k, date: new Date(k), ...v }))
+    .sort((a,b) => a.date - b.date);
+
+  if (allEntries.length < 3) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📈</div><p>Log at least 3 days to see trends and insights.</p></div>';
+    return;
+  }
+
+  // Best streak
+  let bestStreak = 0, curStreak = 0;
+  allEntries.forEach((e,i) => {
+    if (e.workout === true || e.steps === true) {
+      if (i === 0) { curStreak = 1; }
+      else {
+        const prev = allEntries[i-1].date;
+        const diff = (e.date - prev) / 86400000;
+        curStreak = diff === 1 ? curStreak + 1 : 1;
+      }
+      bestStreak = Math.max(bestStreak, curStreak);
+    } else {
+      curStreak = 0;
+    }
+  });
+
+  // Current streak
+  let streak = 0;
+  const now2 = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(now2); d.setDate(now2.getDate() - i);
+    const e = getEntry(dateStr(d));
+    if (e && (e.workout === true || e.steps === true)) streak++;
+    else if (i > 0) break;
+  }
+
+  // Last 30 days heatmap
+  const last90 = [];
+  for (let i = 89; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const e = getEntry(dateStr(d));
+    if (!e) { last90.push('none'); continue; }
+    if (e.workout === true && e.steps === true) last90.push('both');
+    else if (e.workout === true) last90.push('w');
+    else if (e.steps === true) last90.push('s');
+    else last90.push('miss');
+  }
+
+  const totalLogged = allEntries.length;
+  const workoutPct = Math.round(allEntries.filter(e=>e.workout===true).length / totalLogged * 100);
+  const stepsPct = Math.round(allEntries.filter(e=>e.steps===true).length / totalLogged * 100);
+  const bothPct = Math.round(allEntries.filter(e=>e.workout===true&&e.steps===true).length / totalLogged * 100);
+
+  // Top miss reasons
+  const missReasons = [...allEntries.filter(e=>e.workoutMissReason).map(e=>e.workoutMissReason),
+    ...allEntries.filter(e=>e.stepsMissReason).map(e=>e.stepsMissReason)];
+
+  // Day-of-week analysis
+  const dowWorkouts = Array(7).fill(0);
+  const dowCount = Array(7).fill(0);
+  allEntries.forEach(e => {
+    const dow = e.date.getDay();
+    dowCount[dow]++;
+    if (e.workout === true) dowWorkouts[dow]++;
+  });
+
+  let bestDay = 0, bestDayPct = 0;
+  DAYS.forEach((d,i) => {
+    const pct = dowCount[i] > 0 ? dowWorkouts[i]/dowCount[i] : 0;
+    if (pct > bestDayPct) { bestDayPct = pct; bestDay = i; }
+  });
+
+  const heatmapCells = last90.map(v => {
+    const cls = v === 'both' ? 'streak-cell b' : v === 'w' ? 'streak-cell w' : v === 's' ? 'streak-cell s' : v === 'miss' ? 'streak-cell' : 'streak-cell';
+    const style = v === 'none' ? 'opacity:0.3' : '';
+    return `<div class="${cls}" style="${style}" title="${v}"></div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="chart-card" style="margin-bottom:14px;">
+      <div class="chart-title">90-day activity heatmap</div>
+      <div style="margin-bottom:8px;">
+        <div class="streak-bar">${heatmapCells}</div>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--text3);">
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#7c6fa0;vertical-align:middle;margin-right:4px;"></span>Both</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent);vertical-align:middle;margin-right:4px;"></span>Workout</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--blue);vertical-align:middle;margin-right:4px;"></span>Steps</span>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom:14px;">
+      <div class="stat-card"><div class="stat-num">${streak}</div><div class="stat-label">Current streak</div></div>
+      <div class="stat-card"><div class="stat-num">${bestStreak}</div><div class="stat-label">Best streak</div></div>
+      <div class="stat-card"><div class="stat-num">${workoutPct}%</div><div class="stat-label">Workout rate</div></div>
+      <div class="stat-card"><div class="stat-num">${stepsPct}%</div><div class="stat-label">Steps rate</div></div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:14px;">
+      <div class="chart-title">Best workout day</div>
+      <div style="font-size:22px;font-family:'Fraunces',serif;font-weight:600;color:var(--accent);margin:8px 0 4px;">${DAYS[bestDay]}urday</div>
+      <div style="font-size:13px;color:var(--text2);">You work out ${Math.round(bestDayPct*100)}% of ${DAYS[bestDay]}s</div>
+      <div style="margin-top:14px;display:flex;gap:4px;align-items:flex-end;height:60px;">
+        ${DAYS.map((d,i) => {
+          const pct = dowCount[i]>0 ? dowWorkouts[i]/dowCount[i] : 0;
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="width:100%;background:${i===bestDay?'var(--accent)':'var(--bg2)'};border-radius:3px 3px 0 0;height:${Math.max(4,Math.round(pct*50))}px;"></div>
+            <div style="font-size:10px;color:var(--text3);">${d[0]}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Overall completion</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+        ${[['Workouts hit',workoutPct,'var(--accent)'],['10k Steps hit',stepsPct,'var(--blue)'],['Both goals',bothPct,'#7c6fa0']].map(([l,p,c])=>`
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text2);margin-bottom:5px;">
+              <span>${l}</span><span style="font-weight:500;color:var(--text);">${p}%</span>
+            </div>
+            <div style="height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:${p}%;background:${c};border-radius:3px;transition:width 0.5s;"></div>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div style="margin-top:14px;font-size:13px;color:var(--text3);">Based on ${totalLogged} logged days</div>
+    </div>
+  `;
+}
+
+// ============================================================
+//  EXPORT
+// ============================================================
+function getDateRange(mode) {
+  const now = new Date();
+  if (mode === 'week') {
+    const start = new Date(now); start.setDate(now.getDate() - 6);
+    return [start, now];
+  }
+  if (mode === 'month') {
+    return [new Date(now.getFullYear(), now.getMonth(), 1), now];
+  }
+  if (mode === 'year') {
+    return [new Date(now.getFullYear(), 0, 1), now];
+  }
+  return [new Date(0), now];
+}
+
+function exportData(mode, format) {
+  const entries = Object.entries(data).map(([k,v]) => ({ dateStr: k, date: new Date(k), ...v }))
+    .sort((a,b) => a.date - b.date);
+
+  if (mode !== 'all') {
+    const [start, end] = getDateRange(mode);
+    const filtered = entries.filter(e => e.date >= start && e.date <= end);
+    generateExport(filtered, mode, format);
+  } else {
+    generateExport(entries, 'all', format);
+  }
+}
+
+function generateExport(entries, mode, format) {
+  if (entries.length === 0) { showToast('No data to export'); return; }
+
+  let content = '';
+  let filename = '';
+  const now = new Date();
+
+  if (format === 'json') {
+    content = JSON.stringify(data, null, 2);
+    filename = 'fitlog-backup-' + dateStr(now) + '.json';
+    download(content, filename, 'application/json');
+    return;
+  }
+
+  if (format === 'csv') {
+    const cols = ['Date','Workout','Workout Types','Workout Notes','Workout Miss Reason','Steps Goal Hit','Step Count','Steps Miss Reason'];
+    content = cols.join(',') + '\n';
+    entries.forEach(e => {
+      content += [
+        e.dateStr,
+        e.workout === true ? 'Yes' : e.workout === false ? 'No' : '',
+        (e.workoutTypes||[]).join(';'),
+        (e.workoutNotes||'').replace(/,/g,'|'),
+        (e.workoutMissReason||'').replace(/,/g,'|'),
+        e.steps === true ? 'Yes' : e.steps === false ? 'No' : '',
+        e.stepCount || e.stepCountMiss || '',
+        (e.stepsMissReason||'').replace(/,/g,'|')
+      ].join(',') + '\n';
+    });
+    filename = 'fitlog-' + mode + '-' + dateStr(now) + '.csv';
+    download(content, filename, 'text/csv');
+    return;
+  }
+
+  if (format === 'txt') {
+    const total = entries.length;
+    const workouts = entries.filter(e=>e.workout===true).length;
+    const stepsHit = entries.filter(e=>e.steps===true).length;
+    const both = entries.filter(e=>e.workout===true&&e.steps===true).length;
+    const typeCounts = {};
+    entries.forEach(e => { (e.workoutTypes||[]).forEach(t => { typeCounts[t]=(typeCounts[t]||0)+1; }); });
+    const topTypes = Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+    let periodLabel = mode === 'week' ? 'Weekly' : mode === 'month' ? 'Monthly' : mode === 'year' ? 'Yearly' : 'Full';
+    content = `FITLOG — ${periodLabel.toUpperCase()} SUMMARY\n`;
+    content += `Generated: ${now.toLocaleString()}\n`;
+    content += `Period: ${entries[0].dateStr} to ${entries[entries.length-1].dateStr}\n`;
+    content += '='.repeat(50) + '\n\n';
+    content += `SUMMARY\n`;
+    content += `Days logged: ${total}\n`;
+    content += `Workouts: ${workouts} (${total>0?Math.round(workouts/total*100):0}%)\n`;
+    content += `10k Step days: ${stepsHit} (${total>0?Math.round(stepsHit/total*100):0}%)\n`;
+    content += `Both goals: ${both} (${total>0?Math.round(both/total*100):0}%)\n\n`;
+    if (topTypes.length) {
+      content += `TOP WORKOUT TYPES\n`;
+      topTypes.forEach(([t,c]) => { content += `  ${t}: ${c} sessions\n`; });
+      content += '\n';
+    }
+    content += `DAILY LOG\n` + '-'.repeat(50) + '\n';
+    entries.forEach(e => {
+      content += `\n${e.dateStr}\n`;
+      if (e.workout === true) {
+        content += `  ✓ Worked out`;
+        if (e.workoutTypes?.length) content += ` — ${e.workoutTypes.join(', ')}`;
+        content += '\n';
+        if (e.workoutNotes) content += `    Notes: ${e.workoutNotes}\n`;
+      } else if (e.workout === false) {
+        content += `  ✗ No workout\n`;
+        if (e.workoutMissReason) content += `    Reason: ${e.workoutMissReason}\n`;
+      }
+      if (e.steps === true) {
+        content += `  ✓ 10k steps`;
+        if (e.stepCount) content += ` (${Number(e.stepCount).toLocaleString()} steps)`;
+        content += '\n';
+      } else if (e.steps === false) {
+        content += `  ✗ Missed 10k steps`;
+        if (e.stepCountMiss) content += ` (${Number(e.stepCountMiss).toLocaleString()} steps)`;
+        content += '\n';
+        if (e.stepsMissReason) content += `    Reason: ${e.stepsMissReason}\n`;
+      }
+    });
+    filename = 'fitlog-' + mode + '-' + dateStr(now) + '.txt';
+    download(content, filename, 'text/plain');
+  }
+}
+
+function download(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✓ Downloaded ' + filename);
+}
+
+// ============================================================
+//  TOAST
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+loadData();
+initTheme();
+renderCalendar();
+renderLogPage();
+
+// Seed demo data if empty (comment out to start fresh)
+function seedDemoData() {
+  if (Object.keys(data).length > 0) return;
+  const types = [['Strength'],['Cardio'],['HIIT'],['Yoga'],['Running'],['Cycling'],['Strength','Cardio']];
+  const reasons = ['Busy with work','Tired','Travel','Weather','Rest day','Family commitments'];
+  for (let i = 60; i >= 1; i--) {
+    if (Math.random() < 0.3) continue;
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds2 = dateStr(d);
+    const didWorkout = Math.random() < 0.65;
+    const didSteps = Math.random() < 0.55;
+    const entry = {
+      workout: didWorkout,
+      workoutTypes: didWorkout ? types[Math.floor(Math.random()*types.length)] : [],
+      workoutNotes: '',
+      workoutMissReason: !didWorkout && Math.random()<0.5 ? reasons[Math.floor(Math.random()*reasons.length)] : '',
+      steps: didSteps,
+      stepCount: didSteps ? String(Math.floor(10000 + Math.random()*5000)) : '',
+      stepCountMiss: !didSteps ? String(Math.floor(4000 + Math.random()*5000)) : '',
+      stepsMissReason: !didSteps && Math.random()<0.4 ? reasons[Math.floor(Math.random()*reasons.length)] : '',
+      savedAt: d.toISOString()
+    };
+    data[ds2] = entry;
+  }
+  saveData();
+}
+// seedDemoData(); // uncomment to load demo data on first visit
+</script>
+</body>
+</html>
